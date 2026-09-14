@@ -5,6 +5,10 @@ __pycache__/
 .idea/
 
 # Model checkpoints
+checkpoints/
 *.pt
 *.pth
 *.ckpt
+
+# Generated training artifacts
+training_curve.png
