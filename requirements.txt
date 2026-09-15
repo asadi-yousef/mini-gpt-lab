@@ -1,3 +1,5 @@
 torch==2.14.0
 numpy
 matplotlib
+datasets
+tokenizers

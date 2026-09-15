@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from torch.optim import AdamW
 from pathlib import Path
 
-from data import get_batch, vocab_size, chars
 from data import get_batch, vocab_size
 from model import GPT
 
@@ -12,22 +11,19 @@ from model import GPT
 # ---------------------------
 
 # Data
-batch_size = 32
-block_size = 128
+batch_size = 8
+block_size = 256
 
-# Model
-d_model = 128
-n_heads = 4
-n_layers = 4
+d_model = 256
+n_heads = 8
+n_layers = 6
 
-# Training
 learning_rate = 3e-4
 weight_decay = 0.01
-max_steps = 5000
 
-# Evaluation
+max_steps = 10000
 eval_interval = 250
-eval_iters = 100
+eval_iters = 50
 
 # Reproducibility
 seed = 42
@@ -59,9 +55,6 @@ def save_checkpoint(
             "n_layers": n_layers,
             "block_size": block_size,
         },
-
-        # Needed to reconstruct the tokenizer later
-        "chars": chars,
     }
 
     torch.save(checkpoint, path)
@@ -110,17 +103,17 @@ def estimate_loss(model):
     return losses
 
 
-def train(model, optimizer):
+def train(model, optimizer , start_step):
     steps = []
     train_losses = []
     val_losses = []
 
-    checkpoint_dir = Path("checkpoints")
-    checkpoint_dir.mkdir(exist_ok=True)
+    checkpoint_dir = Path("checkpoints/dialouge")
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     best_val_loss = float("inf")
 
-    for step in range(max_steps):
+    for step in range(start_step, max_steps):
 
         x, y = get_batch(
             "train",
@@ -208,7 +201,24 @@ def main():
         weight_decay=weight_decay
     )
 
-    train(model, optimizer)
+    checkpoint = torch.load(
+        "checkpoints/dialogue/final.pt",
+        map_location=device,
+        weights_only=True
+    )
+
+    model.load_state_dict(
+        checkpoint["model_state_dict"]
+    )
+
+    optimizer.load_state_dict(
+        checkpoint["optimizer_state_dict"]
+    )
+
+    start_step = checkpoint["step"] + 1
+
+    print(f"Resuming from step {start_step}")
+    train(model, optimizer,start_step)
 
 
 if __name__ == "__main__":

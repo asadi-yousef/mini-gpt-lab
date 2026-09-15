@@ -204,36 +204,3 @@ class GPT(nn.Module):
             )
 
         return logits, loss
-    
-    @torch.no_grad()
-    def generate(self, idx, max_new_tokens):
-        self.eval()
-
-        for _ in range(max_new_tokens):
-
-            # Keep only the context that fits inside block_size
-            idx_cond = idx[:, -self.block_size:]
-
-            # Get predictions
-            logits, _ = self(idx_cond)
-
-            # Only use prediction from the final position
-            logits = logits[:, -1, :]  # (B, vocab_size)
-
-            # Convert logits to probabilities
-            probs = F.softmax(logits, dim=-1)
-
-            # Sample next token
-            next_token = torch.multinomial(
-                probs,
-                num_samples=1
-            )  # (B, 1)
-
-            # Append generated token to sequence
-            idx = torch.cat(
-                (idx, next_token),
-                dim=1
-            )
-
-        return idx
-    

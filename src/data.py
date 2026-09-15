@@ -1,26 +1,42 @@
 import torch
+from tokenizers import Tokenizer
 
 
-#loading the whole shakespeare text
-with open('data/input.txt','r',encoding='utf-8') as f:
-    text = f.read()
+tokenizer = Tokenizer.from_file(
+    "data/dialogue/tokenizer.json"
+)
 
-chars = sorted(list(set(text)))
-vocab_size = len(chars)
+vocab_size = tokenizer.get_vocab_size()
 
-# create a mapping from characters to integers
-stoi = { ch:i for i,ch in enumerate(chars)}
-itos = {i:ch for i,ch in enumerate(chars)}
-encode = lambda s: [stoi[c] for c in s]   # encoder takes a string and output a list of integers
-decode = lambda l: ''.join([itos[i] for i in l])   # decoder takes a list of integers and output a string
 
-# encoding the entire text dataset and store it into a torch.tensor
-data = torch.tensor(encode(text),dtype=torch.long)
+with open(
+    "data/dialogue/train.txt",
+    "r",
+    encoding="utf-8"
+) as f:
+    train_text = f.read()
 
-# train-validation split , 90% train 10% validation
-n = int(0.9*len(data))
-train_data = data[:n]
-val_data = data[n:]
+with open(
+    "data/dialogue/val.txt",
+    "r",
+    encoding="utf-8"
+) as f:
+    val_text = f.read()
+
+
+train_ids = tokenizer.encode(train_text).ids
+val_ids = tokenizer.encode(val_text).ids
+
+train_data = torch.tensor(
+    train_ids,
+    dtype=torch.long
+)
+
+val_data = torch.tensor(
+    val_ids,
+    dtype=torch.long
+)
+
 
 def get_batch(split, batch_size, block_size):
     data = train_data if split == "train" else val_data
